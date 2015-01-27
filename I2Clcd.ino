@@ -22,7 +22,7 @@ void loop() {
 	for(int i=0; i<NUM_DATA; i++){
 	    Serial.println(data[i]);
 	}
-	
+
 	Serial.println();
     delay(1000);
 
@@ -39,12 +39,19 @@ void askForData(){
     	while(Wire.available())
    		{ 
     		int output=0;
+    		char signo=1;
     		for(int i=5; i>=0; i--){
-    			char data_read=Wire.read()-'0';					//Los datos se leen como caracter y los pasamos a enteros
-    	 		output = output + potenciaDiez(i)*data_read;
+    			char data_read=Wire.read();					//Los datos se leen como caracter
+
+    			if(data_read!='-'){
+    			    output = output + potenciaDiez(i)*(data_read-'0');
+    			}else{
+    				signo=-1;
+    			}
+    	 		
     	 		
     		}
-    		data[x]=output;
+    		data[x]=output*signo;
     		
     	}
 	}
