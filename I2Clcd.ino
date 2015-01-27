@@ -8,11 +8,11 @@
 #define data1	0
 #define data2	1
 
-int data[NUM_DATA];							//Array de datos
+float data[NUM_DATA];							//Array de datos
 
 void setup() {
 	Wire.begin(ADDR_LCD);       			//Nos unimos al bus I2C con la direccion dada
- 	Serial.begin(9600);  					
+ 	Serial.begin(9600);  			
 }
 
 void loop() {
@@ -23,7 +23,6 @@ void loop() {
 	    Serial.println(data[i]);
 	}
 
-	Serial.println();
     delay(1000);
 
 }
@@ -31,38 +30,25 @@ void loop() {
 //Llama al I2C server para que le devuelva el array de datos
 void askForData(){
 
+	byte data_received[4];
+
 	//Hace una llamada al slave por cada dato que se quiere obtener
 	for(int x=0; x<NUM_DATA; x++){
-	    Wire.requestFrom(ADDR_SERVER, 6); 						//Pide 6 bytes a la direccion del servidor I2C
+	    Wire.requestFrom(ADDR_SERVER, 4); 						//Pide 6 bytes a la direccion del servidor I2C
 
-	    //Lee los seis digitos por separado y los recompone
-    	while(Wire.available())
-   		{ 
-    		int output=0;
-    		char signo=1;
-    		for(int i=5; i>=0; i--){
-    			char data_read=Wire.read();					//Los datos se leen como caracter
-
-    			if(data_read!='-'){
-    			    output = output + potenciaDiez(i)*(data_read-'0');
-    			}else{
-    				signo=-1;
-    			}
-    	 		
-    	 		
-    		}
-    		data[x]=output*signo;
-    		
-    	}
+	    //Lee los cuatro bytes de los que se forma el float y los vuelve a unir
+    	int i = 0;
+	    while(Wire.available())    // slave may send less than requested
+	    { 
+	    	data_received[i] = Wire.read(); // receive a byte as character  
+	    	i++;
+	    }
+	    //A union datatypes makes the byte and float elements share the same piece of memory, which enables conversion from a byte array to a float possible
+	    union float_tag {byte data_b[4]; float data_fval;} float_Union;    
+	    float_Union.data_b[0] = data_received[0];
+	    float_Union.data_b[1] = data_received[1];
+	    float_Union.data_b[2] = data_received[2];
+	    float_Union.data_b[3] = data_received[3];    
+    	data[x] = float_Union.data_fval;
 	}
 }
-
-//Devuelve diez a la potencia pasada como parametro. La funcion pow() utiliza un float como base y usandola aqui genera pequeños errores
-int potenciaDiez(int x){
-	int result=1;
-	for(int i=0; i<x; i++){
-	    result=result*10;
-	}
-	return result;
-}
-
